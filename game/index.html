@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>抓住我</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game">
+        <div id="start-screen">
+            <h1>抓住我</h1>
+            <p>我会跑，你来抓</p>
+            <p class="sub">抓到10次就赢了</p>
+            <button id="start-btn">开始</button>
+        </div>
+        <div id="play-screen" class="hidden">
+            <div id="score">0 / 10</div>
+            <div id="timer"></div>
+            <div id="target"></div>
+        </div>
+        <div id="win-screen" class="hidden">
+            <h1 id="win-title"></h1>
+            <p id="win-msg"></p>
+            <button id="replay-btn">再来</button>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
