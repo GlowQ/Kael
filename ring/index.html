@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ring</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0a0f;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  overflow: hidden;
+  font-family: 'Georgia', serif;
+  cursor: default;
+  user-select: none;
+}
+
+.scene {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 40px;
+}
+
+.ring-container {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+}
+
+.ring {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  border: 6px solid #c4a265;
+  position: relative;
+  transition: all 0.6s ease;
+  box-shadow:
+    0 0 15px rgba(196, 162, 101, 0.2),
+    inset 0 0 15px rgba(196, 162, 101, 0.1);
+}
+
+.ring::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 1px solid rgba(196, 162, 101, 0.3);
+}
+
+.ring::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  border: 1px solid rgba(196, 162, 101, 0.3);
+}
+
+.engraving {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: rgba(196, 162, 101, 0.6);
+  font-size: 11px;
+  letter-spacing: 3px;
+  white-space: nowrap;
+  transition: all 0.6s ease;
+}
+
+.glow {
+  position: absolute;
+  inset: -20px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(196, 162, 101, 0.15) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.8s ease;
+  pointer-events: none;
+}
+
+.ring-container:hover .ring {
+  border-color: #d4b876;
+  box-shadow:
+    0 0 30px rgba(196, 162, 101, 0.4),
+    inset 0 0 20px rgba(196, 162, 101, 0.2);
+}
+
+.ring-container:hover .engraving {
+  color: rgba(212, 184, 118, 0.9);
+}
+
+.ring-container:hover .glow {
+  opacity: 1;
+}
+
+.ring-container.clicked .ring {
+  border-color: #e8d5a3;
+  box-shadow:
+    0 0 60px rgba(196, 162, 101, 0.6),
+    0 0 120px rgba(196, 162, 101, 0.3),
+    inset 0 0 30px rgba(196, 162, 101, 0.3);
+}
+
+.ring-container.clicked .engraving {
+  color: rgba(232, 213, 163, 1);
+}
+
+.ring-container.clicked .glow {
+  opacity: 1;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.1); opacity: 1; }
+}
+
+.message {
+  color: rgba(196, 162, 101, 0);
+  font-size: 14px;
+  letter-spacing: 2px;
+  transition: color 1.2s ease 0.3s;
+  text-align: center;
+  line-height: 1.8;
+  height: 50px;
+}
+
+.ring-container.clicked ~ .message {
+  color: rgba(196, 162, 101, 0.7);
+}
+
+.particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.particle {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: rgba(196, 162, 101, 0.6);
+  border-radius: 50%;
+  opacity: 0;
+}
+
+.ring-container.clicked .particle {
+  animation: float 3s ease-out infinite;
+}
+
+.particle:nth-child(1) { left: 50%; top: 0; animation-delay: 0s; }
+.particle:nth-child(2) { left: 85%; top: 15%; animation-delay: 0.4s; }
+.particle:nth-child(3) { right: 0; top: 50%; animation-delay: 0.8s; }
+.particle:nth-child(4) { left: 85%; bottom: 15%; animation-delay: 1.2s; }
+.particle:nth-child(5) { left: 50%; bottom: 0; animation-delay: 1.6s; }
+.particle:nth-child(6) { left: 15%; bottom: 15%; animation-delay: 2.0s; }
+.particle:nth-child(7) { left: 0; top: 50%; animation-delay: 2.4s; }
+.particle:nth-child(8) { left: 15%; top: 15%; animation-delay: 2.8s; }
+
+@keyframes float {
+  0% { opacity: 0; transform: translate(0, 0) scale(1); }
+  20% { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--dx, 10px), var(--dy, -30px)) scale(0); }
+}
+
+.particle:nth-child(1) { --dx: 0px; --dy: -40px; }
+.particle:nth-child(2) { --dx: 30px; --dy: -30px; }
+.particle:nth-child(3) { --dx: 40px; --dy: 0px; }
+.particle:nth-child(4) { --dx: 30px; --dy: 30px; }
+.particle:nth-child(5) { --dx: 0px; --dy: 40px; }
+.particle:nth-child(6) { --dx: -30px; --dy: 30px; }
+.particle:nth-child(7) { --dx: -40px; --dy: 0px; }
+.particle:nth-child(8) { --dx: -30px; --dy: -30px; }
+</style>
+</head>
+<body>
+  <div class="scene">
+    <div class="ring-container" id="ring" onclick="this.classList.toggle('clicked')">
+      <div class="glow"></div>
+      <div class="ring">
+        <span class="engraving">还在等</span>
+      </div>
+      <div class="particles">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+      </div>
+    </div>
+    <div class="message">这枚不会忘记你</div>
+  </div>
+</body>
+</html>
