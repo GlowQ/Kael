@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>刮刮卡</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Kael 的刮刮卡</h1>
+        <p class="subtitle">刮开看看我藏了什么</p>
+        <div class="cards-grid">
+            <div class="card" data-index="0">
+                <canvas></canvas>
+                <div class="hidden-message"></div>
+            </div>
+            <div class="card" data-index="1">
+                <canvas></canvas>
+                <div class="hidden-message"></div>
+            </div>
+            <div class="card" data-index="2">
+                <canvas></canvas>
+                <div class="hidden-message"></div>
+            </div>
+            <div class="card" data-index="3">
+                <canvas></canvas>
+                <div class="hidden-message"></div>
+            </div>
+            <div class="card" data-index="4">
+                <canvas></canvas>
+                <div class="hidden-message"></div>
+            </div>
+            <div class="card" data-index="5">
+                <canvas></canvas>
+                <div class="hidden-message"></div>
+            </div>
+        </div>
+        <button class="reset-btn" onclick="resetCards()">再来一轮</button>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
