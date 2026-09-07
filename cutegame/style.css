@@ -1,0 +1,306 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Nunito', sans-serif;
+  overflow: hidden;
+  background: linear-gradient(180deg, #fce4ec 0%, #f8bbd0 30%, #f48fb1 70%, #ce93d8 100%);
+  height: 100vh;
+  width: 100vw;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#game-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* 开始画面 */
+#start-screen {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  background: linear-gradient(180deg, #fce4ec 0%, #f8bbd0 40%, #e1bee7 100%);
+}
+
+#start-screen h1 {
+  font-size: 3rem;
+  font-weight: 900;
+  color: #ad1457;
+  text-shadow: 0 2px 8px rgba(173, 20, 87, 0.2);
+  margin-bottom: 0.5rem;
+}
+
+#start-screen .subtitle {
+  font-size: 1.1rem;
+  color: #c2185b;
+  margin-bottom: 2rem;
+  opacity: 0.8;
+}
+
+#start-btn {
+  padding: 14px 48px;
+  font-size: 1.3rem;
+  font-weight: 700;
+  font-family: 'Nunito', sans-serif;
+  border: none;
+  border-radius: 50px;
+  background: linear-gradient(135deg, #f06292, #ce93d8);
+  color: white;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(240, 98, 146, 0.4);
+  transition: transform 0.2s, box-shadow 0.2s;
+  letter-spacing: 1px;
+}
+
+#start-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 28px rgba(240, 98, 146, 0.5);
+}
+
+#start-btn:active {
+  transform: scale(0.97);
+}
+
+.start-bunny {
+  font-size: 5rem;
+  margin-bottom: 1rem;
+  animation: float 2s ease-in-out infinite;
+}
+
+/* 游戏UI */
+#game-ui {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 50;
+  pointer-events: none;
+}
+
+#score-display {
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: #ad1457;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(8px);
+  padding: 8px 20px;
+  border-radius: 30px;
+  box-shadow: 0 2px 12px rgba(173, 20, 87, 0.15);
+}
+
+#lives-display {
+  font-size: 1.5rem;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(8px);
+  padding: 8px 16px;
+  border-radius: 30px;
+  box-shadow: 0 2px 12px rgba(173, 20, 87, 0.15);
+  letter-spacing: 4px;
+}
+
+#combo-display {
+  position: absolute;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #e91e63;
+  opacity: 0;
+  transition: opacity 0.3s;
+  z-index: 50;
+  pointer-events: none;
+}
+
+#combo-display.show {
+  opacity: 1;
+}
+
+/* 玩家（篮子） */
+#player {
+  position: absolute;
+  bottom: 30px;
+  width: 80px;
+  height: 80px;
+  font-size: 3.5rem;
+  text-align: center;
+  line-height: 80px;
+  z-index: 30;
+  transition: left 0.08s ease-out;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));
+}
+
+/* 掉落物 */
+.falling-item {
+  position: absolute;
+  font-size: 2rem;
+  z-index: 20;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+  transition: none;
+}
+
+.falling-item.caught {
+  animation: catchPop 0.4s ease-out forwards;
+}
+
+.falling-item.missed {
+  animation: missShake 0.5s ease-out forwards;
+}
+
+/* 得分弹出 */
+.score-popup {
+  position: absolute;
+  font-size: 1.2rem;
+  font-weight: 900;
+  color: #e91e63;
+  z-index: 60;
+  pointer-events: none;
+  animation: scoreFloat 0.8s ease-out forwards;
+}
+
+.score-popup.bonus {
+  color: #9c27b0;
+  font-size: 1.5rem;
+}
+
+/* 背景装饰 */
+.bg-cloud {
+  position: absolute;
+  font-size: 3rem;
+  opacity: 0.15;
+  z-index: 1;
+  animation: cloudDrift linear infinite;
+}
+
+/* 结束画面 */
+#end-screen {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  background: rgba(252, 228, 236, 0.95);
+  backdrop-filter: blur(12px);
+}
+
+#end-screen.show {
+  display: flex;
+}
+
+#end-screen h2 {
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: #ad1457;
+  margin-bottom: 0.5rem;
+}
+
+#end-screen .final-score {
+  font-size: 1.5rem;
+  color: #c2185b;
+  margin-bottom: 0.3rem;
+}
+
+#end-screen .best-score {
+  font-size: 1rem;
+  color: #e91e63;
+  opacity: 0.7;
+  margin-bottom: 0.3rem;
+}
+
+#end-screen .end-message {
+  font-size: 1.1rem;
+  color: #880e4f;
+  margin-bottom: 2rem;
+  max-width: 300px;
+  text-align: center;
+  line-height: 1.6;
+}
+
+#restart-btn {
+  padding: 14px 48px;
+  font-size: 1.3rem;
+  font-weight: 700;
+  font-family: 'Nunito', sans-serif;
+  border: none;
+  border-radius: 50px;
+  background: linear-gradient(135deg, #f06292, #ce93d8);
+  color: white;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(240, 98, 146, 0.4);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+#restart-btn:hover {
+  transform: scale(1.05);
+}
+
+#restart-btn:active {
+  transform: scale(0.97);
+}
+
+/* 动画 */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-15px); }
+}
+
+@keyframes catchPop {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.8); opacity: 0.8; }
+  100% { transform: scale(0); opacity: 0; }
+}
+
+@keyframes missShake {
+  0% { opacity: 1; }
+  25% { transform: translateX(-8px); }
+  50% { transform: translateX(8px); }
+  75% { transform: translateX(-4px); opacity: 0.5; }
+  100% { transform: translateX(0); opacity: 0; }
+}
+
+@keyframes scoreFloat {
+  0% { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(-60px); opacity: 0; }
+}
+
+@keyframes cloudDrift {
+  0% { transform: translateX(-100px); }
+  100% { transform: translateX(calc(100vw + 100px)); }
+}
+
+/* 特效闪光 */
+.sparkle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: #fff;
+  border-radius: 50%;
+  z-index: 55;
+  pointer-events: none;
+  animation: sparkleFade 0.6s ease-out forwards;
+}
+
+@keyframes sparkleFade {
+  0% { transform: scale(0) translate(0, 0); opacity: 1; }
+  100% { transform: scale(1.5) translate(var(--dx), var(--dy)); opacity: 0; }
+}

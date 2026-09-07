@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>兔兔接接乐</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="game-container">
+    <!-- 开始画面 -->
+    <div id="start-screen">
+      <div class="start-bunny">🐰</div>
+      <h1>兔兔接接乐</h1>
+      <p class="subtitle">帮小兔兔接住掉下来的好吃的～</p>
+      <button id="start-btn">开始游戏</button>
+    </div>
+
+    <!-- 游戏UI -->
+    <div id="game-ui">
+      <div id="score-display">🍰 0</div>
+      <div id="lives-display">💗💗💗💗💗</div>
+    </div>
+    <div id="combo-display"></div>
+
+    <!-- 玩家 -->
+    <div id="player">🐰</div>
+
+    <!-- 结束画面 -->
+    <div id="end-screen">
+      <div class="start-bunny">🐰</div>
+      <h2>游戏结束～</h2>
+      <div class="final-score" id="final-score">得分：0</div>
+      <div class="best-score" id="best-score">最高：0</div>
+      <div class="best-score" id="max-combo-display">最大连击：0</div>
+      <div class="end-message" id="end-message"></div>
+      <button id="restart-btn">再来一次！</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
