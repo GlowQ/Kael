@@ -1,12 +1,12 @@
 <title>潮汐锁定</title>
 <style>
   :root {
-    --bg: #0a0a1a;
+    --bg: #1a1428;
   }
   @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) { --bg: #0a0a1a; color-scheme: dark; }
+    :root:not([data-theme="light"]) { --bg: #1a1428; color-scheme: dark; }
   }
-  :root[data-theme="dark"] { --bg: #0a0a1a; color-scheme: dark; }
+  :root[data-theme="dark"] { --bg: #1a1428; color-scheme: dark; }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     background: var(--bg);
@@ -34,66 +34,65 @@
   canvas.height = H;
   const ctx = canvas.getContext('2d');
 
-  // seeded random
   let seed = 42;
   function rand() {
     seed = (seed * 16807 + 0) % 2147483647;
     return (seed - 1) / 2147483646;
   }
 
-  // deep space background
-  const bgGrad = ctx.createRadialGradient(W/2, H*0.38, 0, W/2, H*0.38, H*0.7);
-  bgGrad.addColorStop(0, '#120e22');
-  bgGrad.addColorStop(0.3, '#0d0918');
-  bgGrad.addColorStop(0.7, '#080814');
-  bgGrad.addColorStop(1, '#04040c');
+  // warm twilight background - not too deep
+  const bgGrad = ctx.createRadialGradient(W/2, H*0.38, 0, W/2, H*0.38, H*0.75);
+  bgGrad.addColorStop(0, '#2d1f3d');
+  bgGrad.addColorStop(0.25, '#241a35');
+  bgGrad.addColorStop(0.5, '#1e162e');
+  bgGrad.addColorStop(0.75, '#181225');
+  bgGrad.addColorStop(1, '#130e1e');
   ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, W, H);
 
-  // stars background
-  for (let i = 0; i < 800; i++) {
+  // stars
+  for (let i = 0; i < 600; i++) {
     const x = rand() * W;
     const y = rand() * H;
     const r = rand() * 1.5 + 0.3;
-    const bright = rand() * 0.6 + 0.2;
+    const bright = rand() * 0.5 + 0.25;
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
-    const hue = rand() > 0.7 ? (rand() > 0.5 ? 220 : 340) : 0;
-    const sat = hue === 0 ? '0%' : '40%';
-    ctx.fillStyle = `hsla(${hue}, ${sat}, 90%, ${bright})`;
+    const hue = rand() > 0.6 ? (rand() > 0.5 ? 280 : 340) : 0;
+    const sat = hue === 0 ? '0%' : '50%';
+    ctx.fillStyle = `hsla(${hue}, ${sat}, 92%, ${bright})`;
     ctx.fill();
   }
 
-  // brighter scattered stars
-  for (let i = 0; i < 60; i++) {
+  for (let i = 0; i < 40; i++) {
     const x = rand() * W;
     const y = rand() * H;
-    const r = rand() * 2 + 1;
-    const glow = ctx.createRadialGradient(x, y, 0, x, y, r * 4);
-    glow.addColorStop(0, `rgba(240, 230, 255, ${rand()*0.3+0.3})`);
-    glow.addColorStop(1, 'rgba(240, 230, 255, 0)');
+    const r = rand() * 2.5 + 1;
+    const glow = ctx.createRadialGradient(x, y, 0, x, y, r * 5);
+    glow.addColorStop(0, `rgba(255, 230, 245, ${rand()*0.3+0.3})`);
+    glow.addColorStop(1, 'rgba(255, 230, 245, 0)');
     ctx.fillStyle = glow;
-    ctx.fillRect(x - r*4, y - r*4, r*8, r*8);
+    ctx.fillRect(x - r*5, y - r*5, r*10, r*10);
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(255, 255, 255, ${rand()*0.5+0.5})`;
+    ctx.fillStyle = `rgba(255, 250, 255, ${rand()*0.5+0.5})`;
     ctx.fill();
   }
 
-  // nebula clouds
+  // nebula - romantic pink/lavender tones
   function drawNebula(cx, cy, rx, ry, color, alpha, rotation) {
     ctx.save();
     ctx.translate(cx, cy);
     ctx.rotate(rotation || 0);
     ctx.globalAlpha = alpha;
     ctx.globalCompositeOperation = 'screen';
-    for (let i = 0; i < 12; i++) {
-      const ox = (rand() - 0.5) * rx * 1.2;
-      const oy = (rand() - 0.5) * ry * 1.2;
+    for (let i = 0; i < 14; i++) {
+      const ox = (rand() - 0.5) * rx * 1.3;
+      const oy = (rand() - 0.5) * ry * 1.3;
       const sr = rand() * Math.min(rx, ry) * 0.8 + rx * 0.3;
       const grad = ctx.createRadialGradient(ox, oy, 0, ox, oy, sr);
       grad.addColorStop(0, color);
-      grad.addColorStop(0.4, color.replace(/[\d.]+\)$/, '0.3)'));
+      grad.addColorStop(0.4, color.replace(/[\d.]+\)$/, '0.25)'));
       grad.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = grad;
       ctx.beginPath();
@@ -105,84 +104,83 @@
     ctx.restore();
   }
 
-  // large nebula formations - lighter, more translucent
-  drawNebula(W*0.5, H*0.35, 450, 350, 'rgba(180, 140, 190, 0.3)', 0.06, -0.3);
-  drawNebula(W*0.35, H*0.40, 350, 250, 'rgba(100, 90, 150, 0.25)', 0.05, 0.4);
-  drawNebula(W*0.65, H*0.32, 300, 200, 'rgba(150, 120, 170, 0.25)', 0.04, -0.1);
-  drawNebula(W*0.5, H*0.28, 280, 380, 'rgba(90, 70, 130, 0.2)', 0.04, 0.2);
-  drawNebula(W*0.4, H*0.45, 200, 150, 'rgba(170, 140, 180, 0.2)', 0.03, 0.6);
+  // large romantic nebula formations
+  drawNebula(W*0.5, H*0.37, 500, 400, 'rgba(220, 160, 200, 0.35)', 0.1, -0.3);
+  drawNebula(W*0.35, H*0.42, 380, 280, 'rgba(200, 150, 210, 0.3)', 0.08, 0.4);
+  drawNebula(W*0.65, H*0.34, 350, 250, 'rgba(230, 170, 190, 0.3)', 0.07, -0.1);
+  drawNebula(W*0.5, H*0.30, 320, 420, 'rgba(180, 140, 200, 0.25)', 0.06, 0.2);
+  drawNebula(W*0.45, H*0.45, 250, 180, 'rgba(240, 180, 210, 0.25)', 0.05, 0.6);
 
-  // smaller accent nebula wisps
-  for (let i = 0; i < 6; i++) {
-    const nx = W * 0.3 + rand() * W * 0.4;
-    const ny = H * 0.2 + rand() * H * 0.3;
-    drawNebula(nx, ny, 100 + rand()*150, 80 + rand()*100,
-      rand() > 0.5 ? 'rgba(160, 130, 180, 0.2)' : 'rgba(100, 85, 145, 0.15)',
-      0.025 + rand()*0.025, rand() * Math.PI);
+  // accent wisps
+  for (let i = 0; i < 8; i++) {
+    const nx = W * 0.25 + rand() * W * 0.5;
+    const ny = H * 0.2 + rand() * H * 0.35;
+    drawNebula(nx, ny, 120 + rand()*180, 90 + rand()*120,
+      rand() > 0.5 ? 'rgba(230, 170, 200, 0.25)' : 'rgba(190, 150, 220, 0.2)',
+      0.04 + rand()*0.03, rand() * Math.PI);
   }
 
-  // the two stars - tidal locking
-  const starAx = W * 0.42;
-  const starAy = H * 0.355;
-  const starBx = W * 0.58;
-  const starBy = H * 0.375;
-  const starAr = 28;
-  const starBr = 22;
+  // the two stars - BIGGER, closer to center
+  const starAx = W * 0.38;
+  const starAy = H * 0.365;
+  const starBx = W * 0.62;
+  const starBy = H * 0.385;
+  const starAr = 55;
+  const starBr = 42;
 
-  // tidal bridge between stars
+  // tidal bridge between stars - wider, more romantic glow
   ctx.globalCompositeOperation = 'screen';
-  for (let t = 0; t < 1; t += 0.002) {
+  for (let t = 0; t < 1; t += 0.001) {
     const x = starAx + (starBx - starAx) * t;
     const y = starAy + (starBy - starAy) * t;
     const distA = t;
     const distB = 1 - t;
     const minDist = Math.min(distA, distB);
-    const width = 3 + minDist * 25;
-    const alpha = (0.04 + minDist * 0.08) * (0.8 + rand() * 0.4);
+    const width = 5 + minDist * 50;
+    const alpha = (0.03 + minDist * 0.06) * (0.8 + rand() * 0.4);
     const perpX = -(starBy - starAy);
     const perpY = (starBx - starAx);
     const len = Math.sqrt(perpX*perpX + perpY*perpY);
-    const wave = Math.sin(t * Math.PI * 6) * width * 0.3;
+    const wave = Math.sin(t * Math.PI * 5) * width * 0.25;
     const fx = x + (perpX/len) * wave;
     const fy = y + (perpY/len) * wave;
 
     const grad = ctx.createRadialGradient(fx, fy, 0, fx, fy, width);
-    grad.addColorStop(0, `rgba(200, 175, 220, ${alpha * 0.6})`);
-    grad.addColorStop(0.5, `rgba(170, 145, 200, ${alpha * 0.25})`);
-    grad.addColorStop(1, 'rgba(120, 100, 160, 0)');
+    grad.addColorStop(0, `rgba(240, 190, 220, ${alpha * 0.5})`);
+    grad.addColorStop(0.4, `rgba(210, 170, 230, ${alpha * 0.2})`);
+    grad.addColorStop(1, 'rgba(180, 140, 200, 0)');
     ctx.fillStyle = grad;
     ctx.fillRect(fx - width, fy - width, width * 2, width * 2);
   }
 
-  // matter stream particles along bridge
-  for (let i = 0; i < 100; i++) {
+  // matter stream particles
+  for (let i = 0; i < 150; i++) {
     const t = rand();
     const x = starAx + (starBx - starAx) * t;
     const y = starAy + (starBy - starAy) * t;
     const perpX = -(starBy - starAy);
     const perpY = (starBx - starAx);
     const len = Math.sqrt(perpX*perpX + perpY*perpY);
-    const spread = 8 + Math.min(t, 1-t) * 30;
+    const spread = 12 + Math.min(t, 1-t) * 55;
     const offset = (rand() - 0.5) * spread;
     const px = x + (perpX/len) * offset;
     const py = y + (perpY/len) * offset;
-    const pr = rand() * 1.5 + 0.5;
-    const pa = rand() * 0.4 + 0.1;
+    const pr = rand() * 2 + 0.5;
+    const pa = rand() * 0.35 + 0.08;
 
     ctx.beginPath();
     ctx.arc(px, py, pr, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(200, 180, 220, ${pa * 0.6})`;
+    ctx.fillStyle = `rgba(240, 200, 230, ${pa * 0.5})`;
     ctx.fill();
   }
 
-  // draw star function
   function drawStar(cx, cy, radius, colorInner, colorMid, colorOuter) {
-    // outer glow
-    for (let i = 3; i >= 1; i--) {
-      const glowR = radius * (3 + i * 2.5);
+    // large outer glow
+    for (let i = 4; i >= 1; i--) {
+      const glowR = radius * (2.5 + i * 2);
       const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowR);
-      grad.addColorStop(0, colorOuter.replace(/[\d.]+\)$/, `${0.06 / i})`));
-      grad.addColorStop(0.5, colorOuter.replace(/[\d.]+\)$/, `${0.02 / i})`));
+      grad.addColorStop(0, colorOuter.replace(/[\d.]+\)$/, `${0.08 / i})`));
+      grad.addColorStop(0.4, colorOuter.replace(/[\d.]+\)$/, `${0.03 / i})`));
       grad.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = grad;
       ctx.beginPath();
@@ -191,10 +189,10 @@
     }
 
     // mid glow
-    const midR = radius * 4;
+    const midR = radius * 3.5;
     const midGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, midR);
     midGrad.addColorStop(0, colorMid);
-    midGrad.addColorStop(0.3, colorMid.replace(/[\d.]+\)$/, '0.3)'));
+    midGrad.addColorStop(0.3, colorMid.replace(/[\d.]+\)$/, '0.35)'));
     midGrad.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = midGrad;
     ctx.beginPath();
@@ -204,81 +202,82 @@
     // core
     const coreGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
     coreGrad.addColorStop(0, '#ffffff');
-    coreGrad.addColorStop(0.3, colorInner);
+    coreGrad.addColorStop(0.2, '#fff8fc');
+    coreGrad.addColorStop(0.4, colorInner);
     coreGrad.addColorStop(0.8, colorMid);
-    coreGrad.addColorStop(1, colorMid.replace(/[\d.]+\)$/, '0.4)'));
+    coreGrad.addColorStop(1, colorMid.replace(/[\d.]+\)$/, '0.3)'));
     ctx.fillStyle = coreGrad;
     ctx.beginPath();
     ctx.arc(cx, cy, radius, 0, Math.PI * 2);
     ctx.fill();
 
     // lens flare cross
-    ctx.globalAlpha = 0.15;
-    const flareLen = radius * 6;
+    ctx.globalAlpha = 0.12;
+    const flareLen = radius * 5;
     const flareGrad1 = ctx.createLinearGradient(cx - flareLen, cy, cx + flareLen, cy);
     flareGrad1.addColorStop(0, 'rgba(255,255,255,0)');
-    flareGrad1.addColorStop(0.5, 'rgba(255, 240, 255, 0.6)');
+    flareGrad1.addColorStop(0.5, 'rgba(255, 235, 250, 0.5)');
     flareGrad1.addColorStop(1, 'rgba(255,255,255,0)');
     ctx.fillStyle = flareGrad1;
-    ctx.fillRect(cx - flareLen, cy - 1, flareLen * 2, 2);
+    ctx.fillRect(cx - flareLen, cy - 1.5, flareLen * 2, 3);
     const flareGrad2 = ctx.createLinearGradient(cx, cy - flareLen, cx, cy + flareLen);
     flareGrad2.addColorStop(0, 'rgba(255,255,255,0)');
-    flareGrad2.addColorStop(0.5, 'rgba(255, 240, 255, 0.6)');
+    flareGrad2.addColorStop(0.5, 'rgba(255, 235, 250, 0.5)');
     flareGrad2.addColorStop(1, 'rgba(255,255,255,0)');
     ctx.fillStyle = flareGrad2;
-    ctx.fillRect(cx - 1, cy - flareLen, 2, flareLen * 2);
+    ctx.fillRect(cx - 1.5, cy - flareLen, 3, flareLen * 2);
     ctx.globalAlpha = 1;
   }
 
-  // Star A - slightly larger, warmer
+  // Star A - warm rose
   drawStar(starAx, starAy, starAr,
-    'rgba(255, 240, 245, 1)',
-    'rgba(210, 185, 200, 0.6)',
-    'rgba(170, 140, 165, 0.3)'
+    'rgba(255, 230, 240, 1)',
+    'rgba(240, 180, 210, 0.7)',
+    'rgba(220, 150, 190, 0.35)'
   );
 
-  // Star B - slightly smaller, cooler
+  // Star B - cool lavender
   drawStar(starBx, starBy, starBr,
-    'rgba(240, 240, 255, 1)',
-    'rgba(185, 185, 210, 0.6)',
-    'rgba(140, 140, 170, 0.3)'
+    'rgba(240, 235, 255, 1)',
+    'rgba(200, 180, 235, 0.7)',
+    'rgba(175, 155, 215, 0.35)'
   );
 
-  // gravitational lensing ring around the pair
+  // gravitational lensing ring - larger for bigger stars
   ctx.globalCompositeOperation = 'screen';
   const midX = (starAx + starBx) / 2;
   const midY = (starAy + starBy) / 2;
-  const ringR = 120;
-  ctx.strokeStyle = 'rgba(180, 165, 210, 0.035)';
-  ctx.lineWidth = 25;
+  const ringR = 200;
+  ctx.strokeStyle = 'rgba(220, 190, 235, 0.04)';
+  ctx.lineWidth = 35;
   ctx.beginPath();
-  ctx.ellipse(midX, midY, ringR, ringR * 0.65, -0.15, 0, Math.PI * 2);
+  ctx.ellipse(midX, midY, ringR, ringR * 0.6, -0.12, 0, Math.PI * 2);
   ctx.stroke();
-  ctx.strokeStyle = 'rgba(190, 175, 220, 0.025)';
-  ctx.lineWidth = 40;
+  ctx.strokeStyle = 'rgba(230, 200, 240, 0.025)';
+  ctx.lineWidth = 55;
   ctx.beginPath();
-  ctx.ellipse(midX, midY, ringR * 1.3, ringR * 0.85, -0.15, 0, Math.PI * 2);
+  ctx.ellipse(midX, midY, ringR * 1.35, ringR * 0.85, -0.12, 0, Math.PI * 2);
   ctx.stroke();
 
   ctx.globalCompositeOperation = 'source-over';
 
-  // subtle dust lanes
-  for (let i = 0; i < 200; i++) {
+  // dust particles around the pair
+  for (let i = 0; i < 300; i++) {
     const angle = rand() * Math.PI * 2;
-    const dist = 80 + rand() * 200;
+    const dist = 100 + rand() * 300;
     const dx = midX + Math.cos(angle) * dist;
-    const dy = midY + Math.sin(angle) * dist * 0.6;
-    const dr = rand() * 1 + 0.3;
+    const dy = midY + Math.sin(angle) * dist * 0.55;
+    const dr = rand() * 1.2 + 0.3;
     ctx.beginPath();
     ctx.arc(dx, dy, dr, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(190, 175, 215, ${rand() * 0.08 + 0.02})`;
+    ctx.fillStyle = `rgba(225, 195, 235, ${rand() * 0.06 + 0.02})`;
     ctx.fill();
   }
 
-  // vignette
-  const vigGrad = ctx.createRadialGradient(W/2, H/2, H*0.25, W/2, H/2, H*0.65);
+  // soft vignette - lighter
+  const vigGrad = ctx.createRadialGradient(W/2, H*0.38, H*0.2, W/2, H/2, H*0.7);
   vigGrad.addColorStop(0, 'rgba(0,0,0,0)');
-  vigGrad.addColorStop(1, 'rgba(0,0,0,0.5)');
+  vigGrad.addColorStop(1, 'rgba(10,5,15,0.35)');
   ctx.fillStyle = vigGrad;
   ctx.fillRect(0, 0, W, H);
 })();
