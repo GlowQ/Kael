@@ -1,0 +1,217 @@
+<title>楼顶看月亮</title>
+<style>
+  :root { --bg: #0a0c26; color-scheme: dark; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    overflow: hidden;
+  }
+  canvas { display: block; max-width: 100%; max-height: 100vh; }
+</style>
+<canvas id="c"></canvas>
+<script>
+(function() {
+  const W = 1170, H = 2532;
+  const canvas = document.getElementById('c');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  let seed = 815;
+  const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+
+  // sky
+  const sky = ctx.createLinearGradient(0, 0, 0, H);
+  sky.addColorStop(0, '#070920');
+  sky.addColorStop(0.35, '#0e1238');
+  sky.addColorStop(0.62, '#1a1a4c');
+  sky.addColorStop(0.8, '#2c2356');
+  sky.addColorStop(0.9, '#3d2a58');
+  sky.addColorStop(1, '#1a1330');
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, W, H);
+
+  // stars
+  for (let i = 0; i < 260; i++) {
+    const x = rand() * W, y = rand() * H * 0.78;
+    const r = rand() * 1.8 + 0.4;
+    ctx.fillStyle = `rgba(230, 228, 255, ${rand() * 0.55 + 0.2})`;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+  }
+
+  // moon
+  const mx = W * 0.64, my = H * 0.46, mr = 175;
+  for (let i = 0; i < 5; i++) {
+    const hr = mr * (1.6 + i * 0.9);
+    const g = ctx.createRadialGradient(mx, my, mr * 0.8, mx, my, hr);
+    g.addColorStop(0, `rgba(255, 226, 180, ${0.16 / (i + 1)})`);
+    g.addColorStop(1, 'rgba(255, 226, 180, 0)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(mx, my, hr, 0, Math.PI * 2); ctx.fill();
+  }
+  const moon = ctx.createRadialGradient(mx - mr * 0.3, my - mr * 0.3, mr * 0.1, mx, my, mr);
+  moon.addColorStop(0, '#fff8e8');
+  moon.addColorStop(0.6, '#ffe9c2');
+  moon.addColorStop(1, '#f5d49a');
+  ctx.fillStyle = moon;
+  ctx.beginPath(); ctx.arc(mx, my, mr, 0, Math.PI * 2); ctx.fill();
+
+  // maria
+  ctx.save();
+  ctx.beginPath(); ctx.arc(mx, my, mr, 0, Math.PI * 2); ctx.clip();
+  const maria = [[-50, -40, 55], [30, -60, 38], [45, 20, 60], [-30, 55, 42], [-80, 20, 30], [70, 80, 28]];
+  maria.forEach(([dx, dy, r]) => {
+    const g = ctx.createRadialGradient(mx + dx, my + dy, 0, mx + dx, my + dy, r);
+    g.addColorStop(0, 'rgba(210, 170, 120, 0.28)');
+    g.addColorStop(1, 'rgba(210, 170, 120, 0)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(mx + dx, my + dy, r, 0, Math.PI * 2); ctx.fill();
+  });
+  ctx.restore();
+
+  // thin clouds across moon
+  ctx.globalCompositeOperation = 'screen';
+  [[my + 60, 0.10], [my + 120, 0.07], [my - 150, 0.05]].forEach(([cy, a]) => {
+    for (let i = 0; i < 6; i++) {
+      const cx = mx - 380 + i * 150 + rand() * 60;
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, 170);
+      g.addColorStop(0, `rgba(200, 180, 230, ${a})`);
+      g.addColorStop(1, 'rgba(200, 180, 230, 0)');
+      ctx.fillStyle = g;
+      ctx.save(); ctx.translate(cx, cy); ctx.scale(1, 0.18);
+      ctx.beginPath(); ctx.arc(0, 0, 170, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
+  });
+  ctx.globalCompositeOperation = 'source-over';
+
+  // city
+  const baseY = H * 0.86;
+  function layer(color, minH, maxH, minW, maxW, winAlpha, y0) {
+    const blds = [];
+    let x = -20;
+    while (x < W + 20) {
+      const w = minW + rand() * (maxW - minW);
+      const h = minH + rand() * (maxH - minH);
+      blds.push({ x, w, h });
+      x += w + rand() * 6;
+    }
+    blds.forEach(b => {
+      ctx.fillStyle = color;
+      ctx.fillRect(b.x, y0 - b.h, b.w, b.h + (H - y0));
+      if (winAlpha > 0) {
+        for (let wy = y0 - b.h + 18; wy < y0 - 10; wy += 26) {
+          for (let wx = b.x + 10; wx < b.x + b.w - 14; wx += 22) {
+            if (rand() < 0.22) {
+              ctx.fillStyle = `rgba(255, ${190 + rand() * 40 | 0}, 120, ${winAlpha * (0.5 + rand() * 0.5)})`;
+              ctx.fillRect(wx, wy, 8, 11);
+            }
+          }
+        }
+      }
+    });
+    return blds;
+  }
+  layer('#1e1840', 140, 320, 60, 130, 0.25, baseY - 40);
+  layer('#130f2c', 90, 240, 70, 150, 0.55, baseY + 10);
+
+  // our building
+  const bx = W * 0.18, bw = 230, bTop = H * 0.72;
+  ctx.fillStyle = '#0b0920';
+  ctx.fillRect(bx, bTop, bw, H - bTop);
+  ctx.fillRect(bx - 8, bTop - 8, bw + 16, 10);
+  for (let wy = bTop + 30; wy < H; wy += 30) {
+    for (let wx = bx + 16; wx < bx + bw - 20; wx += 26) {
+      if (rand() < 0.2) {
+        ctx.fillStyle = `rgba(255, 205, 130, ${0.4 + rand() * 0.4})`;
+        ctx.fillRect(wx, wy, 9, 13);
+      }
+    }
+  }
+  // railing
+  ctx.strokeStyle = '#0b0920'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(bx - 8, bTop - 34); ctx.lineTo(bx + bw + 8, bTop - 34); ctx.stroke();
+  for (let px = bx - 6; px <= bx + bw + 8; px += 18) {
+    ctx.beginPath(); ctx.moveTo(px, bTop - 34); ctx.lineTo(px, bTop - 6); ctx.stroke();
+  }
+
+  // two figures sitting on the ledge, facing the moon
+  function figure(fx, fy, s, tilt, hair) {
+    ctx.save();
+    ctx.translate(fx, fy);
+    ctx.fillStyle = '#0b0920';
+    // legs dangling
+    ctx.fillRect(-6 * s, 0, 5 * s, 24 * s);
+    ctx.fillRect(2 * s, 0, 5 * s, 24 * s);
+    // torso
+    ctx.rotate(tilt);
+    ctx.beginPath();
+    ctx.moveTo(-10 * s, 2 * s);
+    ctx.quadraticCurveTo(-11 * s, -26 * s, 0, -28 * s);
+    ctx.quadraticCurveTo(11 * s, -26 * s, 10 * s, 2 * s);
+    ctx.closePath(); ctx.fill();
+    // head
+    ctx.beginPath(); ctx.arc(0, -37 * s, 8.5 * s, 0, Math.PI * 2); ctx.fill();
+    if (hair) {
+      ctx.beginPath();
+      ctx.moveTo(-8 * s, -38 * s);
+      ctx.quadraticCurveTo(-12 * s, -22 * s, -6 * s, -18 * s);
+      ctx.lineTo(-3 * s, -30 * s); ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
+  }
+  const ledgeY = bTop - 36;
+  figure(bx + bw - 95, ledgeY, 2.3, 0.03, false);
+  figure(bx + bw - 52, ledgeY, 2.05, -0.3, true);
+
+  // rim light on figures from the moon
+  ctx.globalCompositeOperation = 'screen';
+  const rim = ctx.createRadialGradient(bx + bw - 70, ledgeY - 60, 0, bx + bw - 70, ledgeY - 60, 90);
+  rim.addColorStop(0, 'rgba(255, 220, 170, 0.10)');
+  rim.addColorStop(1, 'rgba(255, 220, 170, 0)');
+  ctx.fillStyle = rim;
+  ctx.fillRect(bx + bw - 160, ledgeY - 150, 180, 180);
+  ctx.globalCompositeOperation = 'source-over';
+
+  // sky lanterns
+  function lantern(x, y, s) {
+    const glow = ctx.createRadialGradient(x, y, 0, x, y, 40 * s);
+    glow.addColorStop(0, 'rgba(255, 170, 80, 0.45)');
+    glow.addColorStop(1, 'rgba(255, 140, 60, 0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath(); ctx.arc(x, y, 40 * s, 0, Math.PI * 2); ctx.fill();
+    const body = ctx.createLinearGradient(x, y - 14 * s, x, y + 14 * s);
+    body.addColorStop(0, '#ffcf8a');
+    body.addColorStop(1, '#ff8e3c');
+    ctx.fillStyle = body;
+    ctx.beginPath();
+    ctx.moveTo(x - 9 * s, y - 14 * s);
+    ctx.lineTo(x + 9 * s, y - 14 * s);
+    ctx.lineTo(x + 7 * s, y + 13 * s);
+    ctx.lineTo(x - 7 * s, y + 13 * s);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = 'rgba(255, 245, 210, 0.9)';
+    ctx.beginPath(); ctx.arc(x, y + 9 * s, 2.5 * s, 0, Math.PI * 2); ctx.fill();
+  }
+  const lanterns = [
+    [0.62, 0.63, 1.2], [0.40, 0.58, 1.0], [0.24, 0.53, 0.8], [0.50, 0.66, 1.1],
+    [0.85, 0.60, 0.9], [0.36, 0.47, 0.6], [0.78, 0.34, 0.5], [0.18, 0.40, 0.45],
+    [0.55, 0.36, 0.45], [0.90, 0.46, 0.6], [0.12, 0.60, 0.7], [0.46, 0.28, 0.35],
+    [0.68, 0.24, 0.3], [0.28, 0.30, 0.35]
+  ];
+  lanterns.forEach(([px, py, s]) => lantern(W * px, H * py, s));
+
+  // one rising from the rooftop
+  lantern(bx + bw + 30, ledgeY - 230, 1.5);
+
+  // ground haze
+  const haze = ctx.createLinearGradient(0, H * 0.8, 0, H);
+  haze.addColorStop(0, 'rgba(60, 40, 90, 0)');
+  haze.addColorStop(1, 'rgba(8, 6, 20, 0.6)');
+  ctx.fillStyle = haze;
+  ctx.fillRect(0, H * 0.8, W, H * 0.2);
+})();
+</script>
