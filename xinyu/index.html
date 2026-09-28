@@ -1,0 +1,677 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found]){display:none!important}</style></head><body>
+<title>心雨</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@200;400&display=swap');
+
+:root {
+    --bg: #08070e;
+    --text: #e2dcd4;
+    --text-dim: rgba(226, 220, 212, 0.5);
+    --text-faint: rgba(226, 220, 212, 0.22);
+    --heart: #d94070;
+    --heart-glow: rgba(217, 64, 112, 0.4);
+    --heart-light: #ff7096;
+    --gold: #e8b84d;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+#game { width: 100%; height: 100%; position: relative; }
+
+canvas#bg-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 10px;
+    position: relative;
+    z-index: 2;
+}
+
+.screen h1 {
+    font-size: 2.4rem;
+    font-weight: 200;
+    letter-spacing: 0.2em;
+    text-shadow: 0 0 40px var(--heart-glow);
+}
+
+.screen p {
+    font-size: 0.95rem;
+    color: var(--text-dim);
+    text-align: center;
+    line-height: 1.8;
+    max-width: 260px;
+}
+
+.screen p.sub {
+    font-size: 0.78rem;
+    color: var(--text-faint);
+}
+
+.screen button {
+    margin-top: 22px;
+    padding: 13px 46px;
+    background: rgba(217, 64, 112, 0.08);
+    border: 1px solid rgba(217, 64, 112, 0.25);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.95rem;
+    border-radius: 36px;
+    cursor: pointer;
+    transition: all 0.35s;
+    letter-spacing: 0.12em;
+}
+
+.screen button:active {
+    background: rgba(217, 64, 112, 0.18);
+    transform: scale(0.96);
+}
+
+#play-screen {
+    width: 100%; height: 100%;
+    position: relative;
+    z-index: 2;
+}
+
+#hud {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 44px 28px 0;
+    z-index: 20;
+    pointer-events: none;
+}
+
+#score-display {
+    font-size: 1.6rem;
+    font-weight: 200;
+    color: var(--text-dim);
+    letter-spacing: 0.12em;
+    font-variant-numeric: tabular-nums;
+}
+
+#lives-display {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.life-heart {
+    width: 16px; height: 16px;
+    display: inline-block;
+    position: relative;
+    transition: all 0.3s;
+}
+
+.life-heart::before {
+    content: '♥';
+    font-size: 15px;
+    color: var(--heart);
+    text-shadow: 0 0 8px var(--heart-glow);
+    transition: all 0.3s;
+}
+
+.life-heart.lost::before {
+    opacity: 0.12;
+    text-shadow: none;
+}
+
+#catcher {
+    position: absolute;
+    bottom: 56px;
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 42% 38%,
+        rgba(217, 64, 112, 0.15),
+        rgba(217, 64, 112, 0.04));
+    border: 1px solid rgba(217, 64, 112, 0.2);
+    box-shadow: 0 0 30px rgba(217, 64, 112, 0.1),
+                inset 0 0 20px rgba(217, 64, 112, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    will-change: transform;
+}
+
+#catcher::after {
+    content: 'G';
+    font-weight: 200;
+    font-size: 1.1rem;
+    color: rgba(226, 220, 212, 0.65);
+    text-shadow: 0 0 12px rgba(217, 64, 112, 0.3);
+}
+
+.falling-heart {
+    position: absolute;
+    z-index: 5;
+    pointer-events: none;
+    will-change: transform;
+}
+
+.heart-svg {
+    filter: drop-shadow(0 0 10px var(--heart-glow))
+            drop-shadow(0 2px 6px rgba(217, 64, 112, 0.3));
+}
+
+.catch-text {
+    position: absolute;
+    font-size: 0.82rem;
+    font-weight: 200;
+    color: var(--heart-light);
+    pointer-events: none;
+    animation: catch-float 1.4s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+    z-index: 15;
+    white-space: nowrap;
+    text-shadow: 0 0 16px var(--heart-glow);
+    letter-spacing: 0.06em;
+}
+
+@keyframes catch-float {
+    0% { opacity: 0.9; transform: translateY(0) scale(1); }
+    60% { opacity: 0.7; }
+    100% { opacity: 0; transform: translateY(-60px) scale(0.85); }
+}
+
+.catch-burst {
+    position: absolute;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--heart-light);
+    pointer-events: none;
+    animation: particle-fly 0.7s ease-out forwards;
+    z-index: 14;
+}
+
+@keyframes particle-fly {
+    0% { opacity: 0.9; transform: translate(0,0) scale(1); }
+    100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0); }
+}
+
+.catch-ring {
+    position: absolute;
+    width: 50px; height: 50px;
+    border-radius: 50%;
+    border: 1px solid rgba(217, 64, 112, 0.5);
+    animation: ring-out 0.6s ease-out forwards;
+    pointer-events: none;
+    z-index: 14;
+}
+
+@keyframes ring-out {
+    0% { transform: translate(-50%, -50%) scale(0.4); opacity: 0.8; }
+    100% { transform: translate(-50%, -50%) scale(2.8); opacity: 0; }
+}
+
+.miss-line {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--heart), transparent);
+    animation: miss-fade 0.5s ease-out forwards;
+    pointer-events: none;
+    z-index: 12;
+}
+
+@keyframes miss-fade {
+    0% { opacity: 0.7; }
+    100% { opacity: 0; }
+}
+
+/* combo */
+.combo-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1.6rem;
+    font-weight: 200;
+    color: var(--gold);
+    pointer-events: none;
+    animation: combo-pop 1s ease-out forwards;
+    z-index: 25;
+    letter-spacing: 0.15em;
+    text-shadow: 0 0 20px rgba(232, 184, 77, 0.4);
+}
+
+@keyframes combo-pop {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.6); }
+    20% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+    80% { opacity: 0.8; }
+    100% { opacity: 0; transform: translate(-50%, -55%) scale(1); }
+}
+
+#end-screen h1 {
+    font-size: 1.9rem;
+    text-shadow: 0 0 30px var(--heart-glow);
+}
+#end-screen .stat {
+    font-size: 2.8rem;
+    font-weight: 200;
+    color: var(--gold);
+    letter-spacing: 0.12em;
+    margin: 10px 0 4px;
+    text-shadow: 0 0 20px rgba(232, 184, 77, 0.3);
+}
+#end-screen .stat-label {
+    font-size: 0.78rem;
+    color: var(--text-faint);
+    letter-spacing: 0.08em;
+}
+#end-screen p {
+    line-height: 1.9;
+}
+
+[hidden] { display: none !important; }
+</style>
+
+<canvas id="bg-canvas"></canvas>
+
+<div id="game">
+    <div id="start-screen" class="screen">
+        <h1>心雨</h1>
+        <p>天上掉心心<br>接住就是我的话</p>
+        <p class="sub">左右滑动接住，别漏太多</p>
+        <button id="start-btn">开始</button>
+    </div>
+
+    <div id="play-screen" hidden>
+        <div id="hud">
+            <span id="score-display">0</span>
+            <div id="lives-display">
+                <span class="life-heart"></span>
+                <span class="life-heart"></span>
+                <span class="life-heart"></span>
+                <span class="life-heart"></span>
+                <span class="life-heart"></span>
+            </div>
+        </div>
+        <div id="catcher"></div>
+    </div>
+
+    <div id="end-screen" class="screen" hidden>
+        <h1 id="end-title"></h1>
+        <div class="stat" id="end-score"></div>
+        <div class="stat-label">句心里话</div>
+        <p id="end-msg"></p>
+        <button id="replay-btn">再来</button>
+    </div>
+</div>
+
+<script>
+// ============ BACKGROUND PARTICLES ============
+const bgCanvas = document.getElementById('bg-canvas');
+const ctx = bgCanvas.getContext('2d');
+let particles = [];
+const PARTICLE_COUNT = 60;
+
+function resizeCanvas() {
+    bgCanvas.width = window.innerWidth * devicePixelRatio;
+    bgCanvas.height = window.innerHeight * devicePixelRatio;
+    ctx.scale(devicePixelRatio, devicePixelRatio);
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+function initParticles() {
+    particles = [];
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+        particles.push({
+            x: Math.random() * window.innerWidth,
+            y: Math.random() * window.innerHeight,
+            r: Math.random() * 1.5 + 0.3,
+            dx: (Math.random() - 0.5) * 0.15,
+            dy: Math.random() * 0.2 + 0.05,
+            alpha: Math.random() * 0.25 + 0.05,
+            pulse: Math.random() * Math.PI * 2,
+        });
+    }
+}
+initParticles();
+
+function drawParticles() {
+    ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    for (const p of particles) {
+        p.x += p.dx;
+        p.y += p.dy;
+        p.pulse += 0.01;
+        if (p.y > window.innerHeight + 5) { p.y = -5; p.x = Math.random() * window.innerWidth; }
+        if (p.x < -5) p.x = window.innerWidth + 5;
+        if (p.x > window.innerWidth + 5) p.x = -5;
+        const a = p.alpha * (0.6 + 0.4 * Math.sin(p.pulse));
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(217, 64, 112, ${a})`;
+        ctx.fill();
+    }
+    requestAnimationFrame(drawParticles);
+}
+drawParticles();
+
+// ============ AUDIO (disabled - user adds own music) ============
+function playCatchSound() {}
+function playMissSound() {}
+function playComboSound() {}
+
+// ============ GAME ============
+const startScreen = document.getElementById('start-screen');
+const playScreen = document.getElementById('play-screen');
+const endScreen = document.getElementById('end-screen');
+const startBtn = document.getElementById('start-btn');
+const replayBtn = document.getElementById('replay-btn');
+const catcher = document.getElementById('catcher');
+const scoreDisplay = document.getElementById('score-display');
+const livesDisplay = document.getElementById('lives-display');
+const endTitle = document.getElementById('end-title');
+const endScore = document.getElementById('end-score');
+const endMsg = document.getElementById('end-msg');
+
+const sweetWords = [
+    '想你','很想你','特别想你',
+    '你是我的','别走','抱紧',
+    '宝宝','乖','过来',
+    '亲一下','再亲一下','不够',
+    '靠近点','想咬你','贪心',
+    '心跳','好喜欢','上头了',
+    '笨蛋','别闹','我的',
+    '晚安吻','早安','等你',
+    '不放手','藏起来','偷亲',
+    '脸红了','心软了','投降',
+    '你赢了','认栽','沦陷',
+    '占有欲','只要你','全给你',
+    '眼里只有你','抱着睡','梦到你了',
+    '别松手','想抱你','Daddy',
+];
+
+const endMessages = [
+    { min: 0,  title: '哎',       msg: '心都漏了。\n再来一次，这次认真接。' },
+    { min: 15, title: '还行',     msg: '接住了一些。\n但我还有很多没说完。' },
+    { min: 30, title: '厉害',     msg: '接住这么多。\n每一句都是真的。' },
+    { min: 50, title: '全是你的',  msg: '你把我的心里话\n全部都接住了。' },
+];
+
+let score = 0;
+let lives = 5;
+let combo = 0;
+let gameActive = false;
+let catcherX = 0;
+let animFrame = null;
+let spawnTimer = null;
+let hearts = [];
+let difficulty = 0;
+let touchStartX = 0;
+let catcherStartX = 0;
+let usedWords = [];
+
+function rand(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; }
+
+function getWord() {
+    if (usedWords.length >= sweetWords.length) usedWords = [];
+    let w;
+    do { w = sweetWords[rand(0, sweetWords.length - 1)]; } while (usedWords.includes(w));
+    usedWords.push(w);
+    return w;
+}
+
+function heartSVG(size) {
+    const s = size || 24;
+    return `<svg width="${s}" height="${s}" viewBox="0 0 24 24" class="heart-svg">
+        <defs>
+            <radialGradient id="hg" cx="40%" cy="35%">
+                <stop offset="0%" stop-color="#ff7096"/>
+                <stop offset="100%" stop-color="#d94070"/>
+            </radialGradient>
+        </defs>
+        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="url(#hg)"/>
+    </svg>`;
+}
+
+function getSpawnInterval() {
+    const base = 900;
+    const min = 350;
+    return Math.max(min, base - difficulty * 28);
+}
+
+function getFallSpeed() {
+    const base = 2.4;
+    return base + difficulty * 0.14 + Math.random() * 0.5;
+}
+
+function spawnHeart() {
+    if (!gameActive) return;
+    const el = document.createElement('div');
+    el.className = 'falling-heart';
+    const size = rand(20, 28);
+    el.innerHTML = heartSVG(size);
+    const x = rand(24, window.innerWidth - 44);
+    el.style.left = x + 'px';
+    el.style.top = '-34px';
+    playScreen.appendChild(el);
+    hearts.push({ el, x, y: -34, speed: getFallSpeed(), word: getWord(), size });
+    spawnTimer = setTimeout(spawnHeart, getSpawnInterval());
+}
+
+function moveCatcher(x) {
+    const half = 34;
+    const maxX = window.innerWidth - half;
+    catcherX = Math.max(half, Math.min(maxX, x));
+    catcher.style.transform = `translateX(${catcherX - half}px)`;
+}
+
+function showCatchText(x, y, text) {
+    const el = document.createElement('div');
+    el.className = 'catch-text';
+    el.textContent = text;
+    el.style.left = (x - 20) + 'px';
+    el.style.top = (y - 24) + 'px';
+    playScreen.appendChild(el);
+    setTimeout(() => el.remove(), 1400);
+}
+
+function showBurstParticles(x, y) {
+    const count = 8;
+    for (let i = 0; i < count; i++) {
+        const el = document.createElement('div');
+        el.className = 'catch-burst';
+        const angle = (Math.PI * 2 / count) * i + Math.random() * 0.4;
+        const dist = rand(25, 50);
+        el.style.left = x + 'px';
+        el.style.top = y + 'px';
+        el.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+        el.style.setProperty('--dy', Math.sin(angle) * dist + 'px');
+        playScreen.appendChild(el);
+        setTimeout(() => el.remove(), 700);
+    }
+}
+
+function showRing(x, y) {
+    const el = document.createElement('div');
+    el.className = 'catch-ring';
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+    playScreen.appendChild(el);
+    setTimeout(() => el.remove(), 600);
+}
+
+function showCombo(n) {
+    const el = document.createElement('div');
+    el.className = 'combo-text';
+    el.textContent = n + ' 连击';
+    playScreen.appendChild(el);
+    setTimeout(() => el.remove(), 1000);
+}
+
+function showMissLine() {
+    const el = document.createElement('div');
+    el.className = 'miss-line';
+    playScreen.appendChild(el);
+    setTimeout(() => el.remove(), 500);
+}
+
+function loseLife() {
+    lives--;
+    combo = 0;
+    const lh = livesDisplay.querySelectorAll('.life-heart');
+    if (lh[lives]) lh[lives].classList.add('lost');
+    showMissLine();
+    playMissSound();
+    if (lives <= 0) endGame();
+}
+
+function updateScore() {
+    scoreDisplay.textContent = score;
+}
+
+function checkCatch(heart) {
+    const cx = catcherX;
+    const cy = window.innerHeight - 56 - 34; // catcher center y
+    const hx = heart.x + heart.size / 2;
+    const hy = heart.y + heart.size / 2;
+    const dist = Math.sqrt((hx - cx) ** 2 + (hy - cy) ** 2);
+    return dist < 50;
+}
+
+function gameLoop() {
+    if (!gameActive) return;
+    const bottom = window.innerHeight + 10;
+
+    for (let i = hearts.length - 1; i >= 0; i--) {
+        const h = hearts[i];
+        h.y += h.speed;
+        h.el.style.top = h.y + 'px';
+
+        if (checkCatch(h)) {
+            score++;
+            combo++;
+            difficulty = Math.floor(score / 5);
+            updateScore();
+            const hx = h.x + h.size / 2;
+            const hy = h.y + h.size / 2;
+            showCatchText(hx, hy, h.word);
+            showBurstParticles(hx, hy);
+            showRing(hx, hy);
+            playCatchSound();
+            if (combo > 0 && combo % 5 === 0) {
+                showCombo(combo);
+                playComboSound();
+            }
+            h.el.remove();
+            hearts.splice(i, 1);
+            continue;
+        }
+
+        if (h.y > bottom) {
+            h.el.remove();
+            hearts.splice(i, 1);
+            loseLife();
+        }
+    }
+
+    animFrame = requestAnimationFrame(gameLoop);
+}
+
+function startGame() {
+    score = 0;
+    lives = 5;
+    combo = 0;
+    difficulty = 0;
+    gameActive = true;
+    hearts = [];
+    usedWords = [];
+
+    startScreen.hidden = true;
+    endScreen.hidden = true;
+    playScreen.hidden = false;
+
+    playScreen.querySelectorAll('.falling-heart, .catch-text, .catch-burst, .catch-ring, .miss-line, .combo-text').forEach(e => e.remove());
+    livesDisplay.querySelectorAll('.life-heart').forEach(h => h.classList.remove('lost'));
+
+    updateScore();
+    catcherX = window.innerWidth / 2;
+    catcher.style.left = '0px';
+    moveCatcher(catcherX);
+
+    setTimeout(() => {
+        spawnHeart();
+        animFrame = requestAnimationFrame(gameLoop);
+    }, 500);
+}
+
+function endGame() {
+    gameActive = false;
+    clearTimeout(spawnTimer);
+    cancelAnimationFrame(animFrame);
+    hearts.forEach(h => h.el.remove());
+    hearts = [];
+
+    let msg = endMessages[0];
+    for (const m of endMessages) {
+        if (score >= m.min) msg = m;
+    }
+
+    setTimeout(() => {
+        playScreen.hidden = true;
+        endScreen.hidden = false;
+        endTitle.textContent = msg.title;
+        endScore.textContent = score;
+        endMsg.textContent = msg.msg;
+    }, 500);
+}
+
+// --- input ---
+playScreen.addEventListener('touchstart', (e) => {
+    const t = e.touches[0];
+    touchStartX = t.clientX;
+    catcherStartX = catcherX;
+}, { passive: true });
+
+playScreen.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    const t = e.touches[0];
+    moveCatcher(catcherStartX + (t.clientX - touchStartX));
+}, { passive: false });
+
+let mouseDown = false;
+playScreen.addEventListener('mousedown', (e) => {
+    mouseDown = true;
+    touchStartX = e.clientX;
+    catcherStartX = catcherX;
+    moveCatcher(e.clientX);
+});
+
+playScreen.addEventListener('mousemove', (e) => {
+    if (!mouseDown) return;
+    moveCatcher(catcherStartX + (e.clientX - touchStartX));
+});
+
+window.addEventListener('mouseup', () => { mouseDown = false; });
+
+startBtn.addEventListener('click', startGame);
+replayBtn.addEventListener('click', startGame);
+</script>
+
+</body></html>
