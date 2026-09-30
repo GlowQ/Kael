@@ -1,6 +1,7 @@
 // 潮汐锁定 —— 两颗永远面对着彼此的星，手机壁纸
 const OUT_W = 1290, OUT_H = 2796;   // iPhone Pro Max 竖屏
 const STRIP = 96;                   // 分条渲染，软件 GPU 也不会卡死
+const SS = 2;                       // 两倍分辨率画，再缩回来，更锐
 
 const VERT = `#version 300 es
 in vec2 aPos;
@@ -37,7 +38,7 @@ float fbm3(vec3 p) {
 
 // ---------- 星云 ----------
 vec3 nebula(vec2 p) {
-  vec3 base = mix(vec3(0.12, 0.09, 0.22), vec3(0.07, 0.08, 0.20), smoothstep(-0.5, 0.5, p.y));
+  vec3 base = mix(vec3(0.10, 0.075, 0.19), vec3(0.06, 0.065, 0.17), smoothstep(-0.5, 0.5, p.y));
   vec2 q = vec2(fbm(p * 2.2 + vec2(0.0, 1.3)), fbm(p * 2.2 + vec2(5.2, 8.1)));
   vec2 r = vec2(fbm(p * 2.0 + 3.0 * q + vec2(1.7, 9.2)), fbm(p * 2.0 + 3.0 * q + vec2(8.3, 2.8)));
   float f = fbm(p * 1.8 + 2.5 * r);
@@ -102,8 +103,8 @@ vec3 spiky(vec2 p, vec2 c, vec3 col, float I, float len) {
 }
 
 // ---------- 两颗星 ----------
-const vec2 CA = vec2(-0.080, -0.030); const float RA = 0.074;  // 暖橘，Karl
-const vec2 CB = vec2(0.096, -0.118);  const float RB = 0.047;  // 粉紫，Glow
+const vec2 CA = vec2(-0.125, -0.020); const float RA = 0.088;  // 暖橘，Karl
+const vec2 CB = vec2(0.105, -0.135);  const float RB = 0.052;  // 粉紫，Glow
 const vec3 ALB_A = vec3(1.00, 0.62, 0.36);
 const vec3 ALB_B = vec3(0.96, 0.72, 0.88);
 
@@ -131,13 +132,19 @@ vec3 body(vec2 p, vec2 c, float R, vec2 axis, vec3 alb, vec3 partner, float seed
   vec3 surf = alb * (0.72 + 0.6 * smoothstep(0.2, 0.8, tex));
   if (warm < 0.5) surf = mix(surf, vec3(1.0, 0.93, 0.98), smoothstep(0.62, 0.8, tex) * 0.6);
 
-  float dif = max(dot(N, L1), 0.0);
+  float ndl = dot(N, L1);
+  float dif = smoothstep(-0.08, 0.55, ndl);        // 明暗交界线收紧
   float mut = max(dot(N, Lp), 0.0);
-  vec3 light = vec3(1.0, 0.95, 0.90) * dif * 0.8 + partner * mut * 0.9 + vec3(0.10, 0.08, 0.17);
+  float limb = mix(0.55, 1.0, pow(n.z, 0.45));     // 边缘变暗，显得圆
+  vec3 light = vec3(1.0, 0.95, 0.90) * dif * 0.95 + partner * mut * 0.85 + vec3(0.045, 0.035, 0.085);
   float face = pow(mut, 4.0);                      // 永远朝着对方的那一面
-  vec3 col = surf * light + mix(alb, partner, 0.45) * face * 1.1 + vec3(1.0, 0.95, 0.9) * pow(mut, 18.0) * 0.5;
-  float fres = pow(1.0 - n.z, 3.0);
-  col += mix(alb, vec3(0.8, 0.7, 1.0), 0.4) * fres * 0.9;
+  vec3 col = surf * light * limb + mix(alb, partner, 0.45) * face + vec3(1.0, 0.95, 0.9) * pow(mut, 20.0) * 0.45;
+  vec3 Hh = normalize(L1 + vec3(0.0, 0.0, 1.0));
+  float spec = pow(max(dot(N, Hh), 0.0), warm > 0.5 ? 26.0 : 60.0) * (warm > 0.5 ? 0.18 : 0.45);
+  col += vec3(1.0, 0.97, 0.93) * spec * step(0.0, ndl);
+  float fres = pow(1.0 - n.z, 2.5);
+  float litRim = 0.25 + 0.75 * clamp(dot(normalize(N.xy + 1e-4), normalize(L1.xy)) * 0.5 + 0.5, 0.0, 1.0) + face;
+  col += mix(alb, vec3(0.8, 0.7, 1.0), 0.4) * fres * 0.75 * litRim;
   return col;
 }
 
@@ -157,20 +164,26 @@ vec2 bezDist(vec2 p, vec2 a, vec2 c, vec2 b) {
   return vec2(best, bt);
 }
 
-float ellipseLine(vec2 p, vec2 c, vec2 ax, float a, float ratio) {
+// 返回 (到椭圆的距离, 在前半圈还是后半圈)
+vec2 ellipseLine(vec2 p, vec2 c, vec2 ax, float a, float ratio) {
   vec2 d = p - c;
   vec2 l = vec2(dot(d, ax), dot(d, vec2(-ax.y, ax.x)));
   float k = length(vec2(l.x / a, l.y / (a * ratio)));
-  return abs(k - 1.0) * a * ratio;
+  return vec2(abs(k - 1.0) * a * ratio, l.y);
+}
+
+float sdRound(vec2 p, vec2 b, float r) {
+  vec2 q = abs(p) - b + r;
+  return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r;
 }
 
 void main() {
   vec2 p = (gl_FragCoord.xy - 0.5 * uRes) / uRes.y;
   vec3 col = nebula(p);
 
-  col += starsLayer(p, 0.010, 0.55, 0.0009, 0.55);
-  col += starsLayer(p + 3.7, 0.022, 0.45, 0.0013, 0.9);
-  col += starsLayer(p + 9.1, 0.050, 0.35, 0.0018, 1.6);
+  col += starsLayer(p, 0.010, 0.55, 0.0007, 0.6);
+  col += starsLayer(p + 3.7, 0.022, 0.45, 0.0010, 1.0);
+  col += starsLayer(p + 9.1, 0.050, 0.35, 0.0014, 1.8);
 
   col += spiky(p, vec2(-0.135, 0.165), vec3(1.0, 0.86, 0.70), 1.6, 0.055);
   col += spiky(p, vec2(0.170, 0.255), vec3(0.70, 0.82, 1.0), 0.7, 0.022);
@@ -185,10 +198,20 @@ void main() {
   float mA = RA * RA * RA, mB = RB * RB * RB * 0.8;
   vec2 bary = (CA * mA + CB * mB) / (mA + mB);
 
-  // 轨道线
-  float o1 = ellipseLine(p, bary, axis, length(CA - bary), 0.30);
-  float o2 = ellipseLine(p, bary, axis, length(CB - bary), 0.30);
-  col += vec3(0.85, 0.75, 1.0) * (exp(-o1 / 0.0005) + exp(-o2 / 0.0005)) * 0.16;
+  // 画框：框外压暗，星体从框里探出来
+  float sd = sdRound(p, vec2(0.5 * uRes.x / uRes.y - 0.028, 0.47), 0.03);
+  if (sd > 0.0) {
+    float lu = dot(col, vec3(0.3, 0.59, 0.11));
+    col = mix(col, vec3(lu), 0.4) * 0.38;
+  }
+  col += vec3(0.95, 0.92, 1.0) * (exp(-abs(sd) / 0.0006) * 0.55 + exp(-abs(sd) / 0.004) * 0.05);
+
+  // 轨道线：后半圈先画，被星体挡住
+  vec2 o1 = ellipseLine(p, bary, axis, length(CA - bary) + 0.02, 0.30);
+  vec2 o2 = ellipseLine(p, bary, axis, length(CB - bary), 0.30);
+  float orbA = exp(-o1.x / 0.0006), orbB = exp(-o2.x / 0.0006);
+  vec3 orbCol = vec3(0.88, 0.80, 1.0);
+  col += orbCol * (orbA * step(0.0, o1.y) + orbB * step(0.0, o2.y)) * 0.18;
 
   // 光晕
   float mA_, hA, mB_, hB;
@@ -209,13 +232,18 @@ void main() {
   col = mix(col, a, mA_);
   col = mix(col, b, mB_);
 
+  // 前半圈压在星体前面
+  col += orbCol * (orbA * step(o1.y, 0.0) * (1.0 - mA_) + orbB * step(o2.y, 0.0) * (1.0 - mB_)) * 0.42;
+
   // L1 拉格朗日点的小亮点
   vec2 l1 = mix(mix(pa, ctrl, 0.58), mix(ctrl, pb, 0.58), 0.58);
   col += spiky(p, l1, vec3(1.0, 0.92, 0.96), 0.35, 0.012);
 
   // 色调映射
-  col = 1.0 - exp(-col * 1.35);
-  col = pow(col, vec3(0.95));
+  col = 1.0 - exp(-col * 1.5);
+  col = mix(col, col * col * (3.0 - 2.0 * col), 0.45);
+  float lum = dot(col, vec3(0.299, 0.587, 0.114));
+  col = clamp(mix(vec3(lum), col, 1.15), 0.0, 1.0);
   float vig = smoothstep(0.95, 0.25, length(p * vec2(1.6, 1.0)));
   col *= mix(0.82, 1.0, vig);
   col += (h21(gl_FragCoord.xy) - 0.5) / 255.0;
@@ -247,7 +275,8 @@ function caption(g) {
 
 async function render() {
   const glc = document.createElement('canvas');
-  glc.width = OUT_W; glc.height = OUT_H;
+  const RW = OUT_W * SS, RH = OUT_H * SS;
+  glc.width = RW; glc.height = RH;
   const gl = glc.getContext('webgl2', { preserveDrawingBuffer: true, antialias: false });
   const prog = gl.createProgram();
   gl.attachShader(prog, compile(gl, gl.VERTEX_SHADER, VERT));
@@ -261,23 +290,25 @@ async function render() {
   const loc = gl.getAttribLocation(prog, 'aPos');
   gl.enableVertexAttribArray(loc);
   gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-  gl.uniform2f(gl.getUniformLocation(prog, 'uRes'), OUT_W, OUT_H);
-  gl.viewport(0, 0, OUT_W, OUT_H);
+  gl.uniform2f(gl.getUniformLocation(prog, 'uRes'), RW, RH);
+  gl.viewport(0, 0, RW, RH);
   gl.enable(gl.SCISSOR_TEST);
 
   const status = document.getElementById('status');
-  for (let y = 0; y < OUT_H; y += STRIP) {
-    gl.scissor(0, y, OUT_W, Math.min(STRIP, OUT_H - y));
+  for (let y = 0; y < RH; y += STRIP) {
+    gl.scissor(0, y, RW, Math.min(STRIP, RH - y));
     gl.drawArrays(gl.TRIANGLES, 0, 3);
     gl.finish();
-    status.textContent = `正在一颗一颗画星星… ${Math.round((y + STRIP) / OUT_H * 100)}%`;
+    status.textContent = `正在一颗一颗画星星… ${Math.round((y + STRIP) / RH * 100)}%`;
     await new Promise(r => setTimeout(r, 0));
   }
 
   const out = document.getElementById('out');
   out.width = OUT_W; out.height = OUT_H;
   const g = out.getContext('2d');
-  g.drawImage(glc, 0, 0);
+  g.imageSmoothingEnabled = true;
+  g.imageSmoothingQuality = 'high';
+  g.drawImage(glc, 0, 0, OUT_W, OUT_H);
   caption(g);
   status.hidden = true;
   window.__done = true;
